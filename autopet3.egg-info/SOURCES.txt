@@ -1,0 +1,9 @@
+LICENSE
+pyproject.toml
+requirements.txt
+autopet3/__init__.py
+autopet3.egg-info/PKG-INFO
+autopet3.egg-info/SOURCES.txt
+autopet3.egg-info/dependency_links.txt
+autopet3.egg-info/requires.txt
+autopet3.egg-info/top_level.txt
