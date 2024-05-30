@@ -219,14 +219,16 @@ if __name__ == "__main__":
     # Test the transforms
     from autopet3.fixed.utils import plot_ct_pet_label
 
-    split = read_split("../../test/data/splits_final.json", 0)
-    test_sample = get_file_dict_nn("../../test/data/", split["train"], suffix=".nii.gz")[0]
-    print(test_sample)
+    for i in range(10):
 
-    transform = get_transforms(stage="train", resample=True, target_shape=(112, 160, 128))
-    res = transform(test_sample)
-    plot_ct_pet_label(ct=res[0][0], pet=res[0][1], label=res[1])
+        split = read_split("../../../Autopet/splits_final.json", 0)
+        test_sample = get_file_dict_nn("../../../Autopet/", split["train"], suffix=".nii.gz")[i]
+        print(test_sample)
 
-    transform = get_transforms(stage="val_sampled", resample=False, target_shape=(112, 160, 128))
-    res = transform(test_sample)
-    plot_ct_pet_label(ct=res[0][0], pet=res[0][1], label=res[1])
+        transform = get_transforms(stage="train", resample=True, target_shape=(112, 160, 128))
+        res = transform(test_sample)
+        plot_ct_pet_label(ct=res[0][0], pet=res[0][1], label=res[1])
+
+        transform = get_transforms(stage="val_sampled", resample=False, target_shape=(112, 160, 128))
+        res = transform(test_sample)
+        plot_ct_pet_label(ct=res[0][0], pet=res[0][1], label=res[1])
