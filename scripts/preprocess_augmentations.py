@@ -55,10 +55,13 @@ class ResampleDataset(Dataset):
 
     def __getitem__(self, idx):
         file_path = self.files[idx]
+        print(f"filepath: {file_path['label']}")
         for i in range(self.samples_per_file):
             image, label = self.transform(file_path)
-            label_name = str(file_path["label"]).replace(".nii.gz", "").split("/")[-1]
+            label_name = str(file_path["label"]).replace(".nii.gz", "").split("\\")[-1] # / vs \ makes the whole difference
+            print(f"label_name: {label_name}")
             output_path = os.path.join(self.destination, f"{label_name}_{i:03d}.npz")
+            print(f"output_path: {output_path}")
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with self.lock:
                 np.savez_compressed(output_path, input=image.numpy(), label=label.numpy())
@@ -101,10 +104,10 @@ def test_integrity(dir_path):
 
 
 if __name__ == "__main__":
-    root = "/data_dir/Autopet"
-    dest = "/data_dir/preprocessed/train"
-    worker = 96
-    samples_per_file = 50
+    root = "../../Autopet"
+    dest = "../../preprocessed/train"
+    worker = 1
+    samples_per_file = 1
     seed = 42
 
     transform = get_transforms("train", target_shape=(128, 160, 112), resample=True)

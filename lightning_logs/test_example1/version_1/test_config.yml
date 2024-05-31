@@ -1,15 +1,15 @@
 data:
-  data_dir: ../Autopet
-  splits_file: ../Autopet/splits_final.json
+  data_dir: test/data
+  splits_file: test/data/splits_final.json
   fold: 0
   target_shape: [ 128, 160, 112 ]
   batch_size: 2
   suffix: .nii.gz
-  num_workers_train: 24
-  num_workers_val: 4
+  num_workers_train: 0
+  num_workers_val: 0
 
 logger:
-  experiment: ../lightning_logs
+  experiment: lightning_logs
   name: test_example1
 
 model:
@@ -21,7 +21,7 @@ model:
   seed: 42
 
 trainer:
-  max_steps: 1000
+  max_steps: 10
   check_val_every_n_epoch: 5
   precision: bf16-mixed #32, 16
   accelerator: gpu

@@ -82,11 +82,11 @@ class AutoPETDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(
-            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers_train, pin_memory=True
+            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers_train, pin_memory=True, persistent_workers=True
         )
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size_val, num_workers=self.num_workers_val)
+        return DataLoader(self.val_dataset, batch_size=self.batch_size_val, num_workers=self.num_workers_val, persistent_workers=True)
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, batch_size=1, num_workers=self.num_workers_val)
