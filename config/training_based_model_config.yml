@@ -4,13 +4,14 @@ data:
   fold: 0
   target_shape: [ 128, 160, 112 ]
   batch_size: 2
-  suffix: .nii.gz
+  suffix: .npz
   num_workers_train: 24
-  num_workers_val: 4
+  num_workers_val: 24
+  data_dir_preprocessed: ../preprocessed_1_random_sample
 
 logger:
   experiment: ../lightning_logs
-  name: test_example1
+  name: 1_random_sampled_baseline_testing
 
 model:
   pretrained: false
@@ -21,7 +22,7 @@ model:
   seed: 42
 
 trainer:
-  max_steps: 1000
+  max_steps: 64600
   check_val_every_n_epoch: 5
   precision: bf16-mixed #32, 16
   accelerator: gpu
