@@ -43,11 +43,18 @@ class ResampleDataset(Dataset):
         self.root = data_dir
         self.samples_per_file = samples_per_file
 
+        print(f"self.files length is {len(self.files)}")
+        print(f"train_val_data length is {len(train_val_data)}")
+
         if resume:
             valid_files = self.resume_preprocessing()
             train_val_data = list(set(train_val_data) - set(valid_files))
 
+            print(f"valid files length is {len(valid_files)}")
+            print(f"train_val_data length after is {len(train_val_data)}")
+
         self.files = get_file_dict_nn(data_dir, train_val_data, suffix=".nii.gz")
+        print(f"self.files length after is {len(self.files)}")
         self.lock = Lock()
 
     def __len__(self):
@@ -55,13 +62,10 @@ class ResampleDataset(Dataset):
 
     def __getitem__(self, idx):
         file_path = self.files[idx]
-        print(f"filepath: {file_path['label']}")
         for i in range(self.samples_per_file):
             image, label = self.transform(file_path)
             label_name = str(file_path["label"]).replace(".nii.gz", "").split("\\")[-1] # / vs \ makes the whole difference
-            print(f"label_name: {label_name}")
             output_path = os.path.join(self.destination, f"{label_name}_{i:03d}.npz")
-            print(f"output_path: {output_path}")
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with self.lock:
                 np.savez_compressed(output_path, input=image.numpy(), label=label.numpy())
@@ -72,6 +76,7 @@ class ResampleDataset(Dataset):
             ["_".join(i.split("_")[:-1]) for i in os.listdir(self.destination)], return_counts=True
         )
         valid_files = list(unique_files[counts == self.samples_per_file])
+        #valid_files_to_return = []
         for j, i in tqdm(enumerate(valid_files), desc=f"Resuming preprocessing. Validate {len(valid_files)} files"):
             test_file = os.path.join(self.destination, f"{i}_{self.samples_per_file - 1:03d}.npz")
             # Load and process data
@@ -79,7 +84,7 @@ class ResampleDataset(Dataset):
             try:
                 image = torch.from_numpy(data["input"])
                 label = torch.from_numpy(data["label"])
-                valid_files.append(test_file)
+                #valid_files_to_return.append(test_file)
             except Exception:
                 valid_files.pop(j)
 
@@ -106,12 +111,12 @@ def test_integrity(dir_path):
 if __name__ == "__main__":
     root = "../../Autopet"
     dest = "../../preprocessed/train"
-    worker = 1
-    samples_per_file = 1
+    worker = 20
+    samples_per_file = 15
     seed = 42
 
     transform = get_transforms("train", target_shape=(128, 160, 112), resample=True)
-    ds = ResampleDataset(root, dest, transform, samples_per_file=samples_per_file, seed=seed, resume=False)
+    ds = ResampleDataset(root, dest, transform, samples_per_file=samples_per_file, seed=seed, resume=True)
 
     dataloader = DataLoader(ds, batch_size=1, shuffle=False, num_workers=worker)
     for _ in tqdm(dataloader, total=len(dataloader)):
