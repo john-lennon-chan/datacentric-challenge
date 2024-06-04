@@ -25,7 +25,7 @@ list_train_dir_copy = os.listdir(train_dir)
 # Iterate over all files in the train directory
 for filename in list_train_dir_copy:
     # Check if the file is in splits_dict["val"]
-    if filename.split('_00')[0] in splits_dict["val"]:
+    if filename[:-8] in splits_dict["val"]:
         # Construct full file paths
         source = os.path.join(train_dir, filename)
         destination = os.path.join(val_dir, filename)

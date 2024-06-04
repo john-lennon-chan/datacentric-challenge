@@ -119,7 +119,7 @@ class PredictModel:
             torch.Tensor: The evaluation result after applying the model.
 
         """
-        net = NNUnet.load_from_checkpoint(model_path, sw_batch_size=self.sw_batch_size)
+        net = NNUnet.load_from_checkpoint(model_path, sw_batch_size=self.sw_batch_size, strict=False)
         net.eval()
         net.cuda()
         with torch.no_grad(), torch.autocast(device_type="cuda", dtype=torch.bfloat16):
@@ -287,7 +287,13 @@ def evaluate(
 
 
 if __name__ == "__main__":
-    app()
+    predict_model = PredictModel(["test/epoch=581_fold0.ckpt"])
+    result = predict_model.run("test/data/imagesTr/psma_95b833d46f153cd2_2017-11-18_0000.nii.gz",
+                               "test/data/imagesTr/psma_95b833d46f153cd2_2017-11-18_0001.nii.gz",
+                               save_path = "test/",
+                               verbose=True)
+
+    #app()
     # example
     # python predict.py infer "test/data/imagesTr/psma_95b833d46f153cd2_2017-11-18_0000.nii.gz"
     # "test/data/imagesTr/psma_95b833d46f153cd2_2017-11-18_0001.nii.gz"  --model-paths "test/epoch=581_fold0.ckpt"

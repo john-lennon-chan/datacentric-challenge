@@ -7,16 +7,16 @@ data:
   suffix: .npz
   num_workers_train: 24
   num_workers_val: 24
-  data_dir_preprocessed: ../preprocessed_15_random_sample
+  data_dir_preprocessed: ../preprocessed_1_random_sample
 
 logger:
   experiment: ../lightning_logs
-  name: 15_random_sampled_baseline_testing
+  name: 1_random_sampled_baseline_testing
 
 model:
   pretrained: false
-  resume: false
-  ckpt_path:
+  resume: true
+  ckpt_path: ../lightning_logs/1_random_sampled_baseline_testing/version_7/checkpoints/last.ckpt
   lr: 0.001
   sw_batch_size: 4
   seed: 42
