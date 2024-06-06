@@ -1,7 +1,7 @@
 data:
-  data_dir: test/data
-  data_dir_preprocessed: test/preprocessed
-  splits_file: test/data/splits_final.json
+  data_dir: ../Autopet/
+  data_dir_preprocessed: ../preprocessed_15_samples/preprocessed/
+  splits_file: ../Autopet/splits_final.json
   fold: 0
   target_shape: [ 128, 160, 112 ]
   batch_size: 2

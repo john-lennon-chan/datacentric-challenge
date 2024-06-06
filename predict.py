@@ -13,6 +13,7 @@ from autopet3.fixed.evaluation import AutoPETMetricAggregator
 from autopet3.fixed.utils import plot_results
 from omegaconf import OmegaConf
 from tqdm import tqdm
+import gc
 
 app = typer.Typer()
 
@@ -274,24 +275,60 @@ def evaluate(
     tta: bool = False,
     random_flips: int = 0,
     result_path: Optional[str] = "test/",
+    processed_files: list = []
 ):
     config = OmegaConf.load(config)
     model_paths = [config.model.ckpt_path] if isinstance(config.model.ckpt_path, str) else config.model.ckpt_path
     predict = PredictModel(model_paths, sw_batch_size=sw_batch_size, tta=tta, random_flips=random_flips)
-    parser = SimpleParser(os.path.join(result_path, "results_tta.json"))
+    #parser = SimpleParser(os.path.join(result_path, "results_tta.json"))
     split = read_split(config.data.splits_file, config.data.fold)
-    files = get_file_dict_nn(config.data.data_dir, split["val"], suffix=".nii.gz")
-    for file in tqdm(files, desc="Predicting"):
-        result = predict.run(str(file["ct"]), str(file["pet"]), label=str(file["label"]), verbose=False)
-        parser.write(file, result)
+    files = get_file_dict_nn(config.data.data_dir, [path for path in split["train"] if path not in processed_files], suffix=".nii.gz")
+    for file, path in zip(tqdm(files, desc="Predicting"), [path for path in split["train"] if path not in processed_files]):
+        result = predict.run(str(file["ct"]), str(file["pet"]), save_path=result_path, verbose=False)
+        processed_files.append(path)
+        json.dump(processed_files, open("../results/train/predicted_filenames.json", "w"))
+        #result = predict.run(str(file["ct"]), str(file["pet"]), label=str(file["label"]), verbose=False)
+        #parser.write(file, result)
+        # Delete the variable
+        del result
 
+        # Manually run the garbage collector
+        gc.collect()
+
+        torch.cuda.empty_cache()
 
 if __name__ == "__main__":
+    """
+    import json
+    def record_predicted_filenames(filenames, json_file_path):
+        with open(json_file_path, 'w') as json_file:
+            json.dump(filenames, json_file)
+
+
+    from tqdm import tqdm
     predict_model = PredictModel(["test/epoch=581_fold0.ckpt"])
-    result = predict_model.run("test/data/imagesTr/psma_95b833d46f153cd2_2017-11-18_0000.nii.gz",
-                               "test/data/imagesTr/psma_95b833d46f153cd2_2017-11-18_0001.nii.gz",
-                               save_path = "test/",
-                               verbose=True)
+    split_file = read_split("../Autopet/splits_final.json", 0)
+    train_val = ["train", "val"]
+    predicted_filenames = json.load(open("../results/train/predicted_filenames.json"))
+
+    
+    # running from inference with transform
+    for split in train_val:
+        for file in tqdm([file for file in split_file[split] if file not in predicted_filenames], desc=f"Processing {split} files"):
+            predicted_filenames.append(file)
+            record_predicted_filenames(predicted_filenames, f"../results/{split}/predicted_filenames.json")
+            
+            result = predict_model.run(
+                f"../Autopet/imagesTr/{file}_0000.nii.gz",
+                f"../Autopet/imagesTr/{file}_0001.nii.gz",
+                #label=f"../Autopet/labelsTr/{file}.nii.gz",
+                save_path=f"../results/{split}/",
+                verbose=False,
+            )
+    """
+    import json
+    evaluate(result_path=f"../results/train", processed_files=json.load(open("../results/train/predicted_filenames.json")))
+
 
     #app()
     # example
