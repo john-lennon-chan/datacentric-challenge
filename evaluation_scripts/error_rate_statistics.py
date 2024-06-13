@@ -57,5 +57,5 @@ def do_analysis_on_csv_files(analysis_folder):
 if __name__ == "__main__":
     metrics_folder = r"D:\testing_AI_environment\results\metrics_per_organ"
     analysis_folder = r"D:\testing_AI_environment\results\metrics_analysis"
-    #load_json_files_and_compile_as_csv(metrics_folder, analysis_folder)
+    load_json_files_and_compile_as_csv(metrics_folder, analysis_folder)
     do_analysis_on_csv_files(analysis_folder)
