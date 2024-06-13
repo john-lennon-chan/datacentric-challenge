@@ -269,68 +269,43 @@ def infer(
 
 
 @app.command()
+def infer(
+    ct_file_path: str,
+    pet_file_path: str,
+    label: Optional[str] = None,
+    save_path: Optional[str] = None,
+    verbose: bool = False,
+    model_paths: List[str] = typer.Argument(..., help="Paths to the model checkpoints"),
+    sw_batch_size: int = 6,
+    tta: bool = False,
+    random_flips: int = 0,
+):
+    predict = PredictModel(model_paths, sw_batch_size, tta, random_flips)
+    result = predict.run(ct_file_path, pet_file_path, label, save_path, verbose)
+    typer.echo(result)
+
+
+@app.command()
 def evaluate(
     config: str = "config/test_predict.yml",
     sw_batch_size: int = 6,
     tta: bool = False,
     random_flips: int = 0,
     result_path: Optional[str] = "test/",
-    processed_files: list = []
 ):
     config = OmegaConf.load(config)
     model_paths = [config.model.ckpt_path] if isinstance(config.model.ckpt_path, str) else config.model.ckpt_path
     predict = PredictModel(model_paths, sw_batch_size=sw_batch_size, tta=tta, random_flips=random_flips)
-    #parser = SimpleParser(os.path.join(result_path, "results_tta.json"))
+    parser = SimpleParser(os.path.join(result_path, "results_tta.json"))
     split = read_split(config.data.splits_file, config.data.fold)
-    files = get_file_dict_nn(config.data.data_dir, [path for path in split["train"] if path not in processed_files], suffix=".nii.gz")
-    for file, path in zip(tqdm(files, desc="Predicting"), [path for path in split["train"] if path not in processed_files]):
-        result = predict.run(str(file["ct"]), str(file["pet"]), save_path=result_path, verbose=False)
-        processed_files.append(path)
-        json.dump(processed_files, open(r"D:\testing_AI_environment\results\train\predicted_filenames.json", "w"))
-        #result = predict.run(str(file["ct"]), str(file["pet"]), label=str(file["label"]), verbose=False)
-        #parser.write(file, result)
-        # Delete the variable
-        del result
+    files = get_file_dict_nn(config.data.data_dir, split["val"], suffix=".nii.gz")
+    for file in tqdm(files, desc="Predicting"):
+        result = predict.run(str(file["ct"]), str(file["pet"]), label=str(file["label"]), verbose=False)
+        parser.write(file, result)
 
-        # Manually run the garbage collector
-        gc.collect()
-
-        torch.cuda.empty_cache()
 
 if __name__ == "__main__":
-
-    import json
-    def record_predicted_filenames(filenames, json_file_path):
-        with open(json_file_path, 'w') as json_file:
-            json.dump(filenames, json_file)
-
-
-    from tqdm import tqdm
-    predict_model = PredictModel([r"D:\testing_AI_environment\test\epoch=581_fold0.ckpt"])
-    split_file = read_split(r"D:\testing_AI_environment\Autopet\splits_final.json", 0)
-    train_val = ["train", "val"]
-    predicted_filenames = json.load(open(r"D:\testing_AI_environment\results\train\predicted_filenames.json"))
-    """
-    
-    # running from inference with transform
-    for split in train_val:
-        for file in tqdm([file for file in split_file[split] if file not in predicted_filenames], desc=f"Processing {split} files"):
-            predicted_filenames.append(file)
-            record_predicted_filenames(predicted_filenames, f"../results/{split}/predicted_filenames.json")
-            
-            result = predict_model.run(
-                f"../Autopet/imagesTr/{file}_0000.nii.gz",
-                f"../Autopet/imagesTr/{file}_0001.nii.gz",
-                #label=f"../Autopet/labelsTr/{file}.nii.gz",
-                save_path=f"../results/{split}/",
-                verbose=False,
-            )
-    """
-
-    evaluate(result_path=r"D:\testing_AI_environment\results\predicted_images", processed_files=predicted_filenames)
-
-
-    #app()
+    app()
     # example
     # python predict.py infer "test/data/imagesTr/psma_95b833d46f153cd2_2017-11-18_0000.nii.gz"
     # "test/data/imagesTr/psma_95b833d46f153cd2_2017-11-18_0001.nii.gz"  --model-paths "test/epoch=581_fold0.ckpt"
