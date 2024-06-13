@@ -286,7 +286,7 @@ def evaluate(
     for file, path in zip(tqdm(files, desc="Predicting"), [path for path in split["train"] if path not in processed_files]):
         result = predict.run(str(file["ct"]), str(file["pet"]), save_path=result_path, verbose=False)
         processed_files.append(path)
-        json.dump(processed_files, open("../results/train/predicted_filenames.json", "w"))
+        json.dump(processed_files, open(r"D:\testing_AI_environment\results\train\predicted_filenames.json", "w"))
         #result = predict.run(str(file["ct"]), str(file["pet"]), label=str(file["label"]), verbose=False)
         #parser.write(file, result)
         # Delete the variable
@@ -298,7 +298,7 @@ def evaluate(
         torch.cuda.empty_cache()
 
 if __name__ == "__main__":
-    """
+
     import json
     def record_predicted_filenames(filenames, json_file_path):
         with open(json_file_path, 'w') as json_file:
@@ -306,11 +306,11 @@ if __name__ == "__main__":
 
 
     from tqdm import tqdm
-    predict_model = PredictModel(["test/epoch=581_fold0.ckpt"])
-    split_file = read_split("../Autopet/splits_final.json", 0)
+    predict_model = PredictModel([r"D:\testing_AI_environment\test\epoch=581_fold0.ckpt"])
+    split_file = read_split(r"D:\testing_AI_environment\Autopet\splits_final.json", 0)
     train_val = ["train", "val"]
-    predicted_filenames = json.load(open("../results/train/predicted_filenames.json"))
-
+    predicted_filenames = json.load(open(r"D:\testing_AI_environment\results\train\predicted_filenames.json"))
+    """
     
     # running from inference with transform
     for split in train_val:
@@ -326,8 +326,8 @@ if __name__ == "__main__":
                 verbose=False,
             )
     """
-    import json
-    evaluate(result_path=f"../results/train", processed_files=json.load(open("../results/train/predicted_filenames.json")))
+
+    evaluate(result_path=r"D:\testing_AI_environment\results\predicted_images", processed_files=predicted_filenames)
 
 
     #app()
