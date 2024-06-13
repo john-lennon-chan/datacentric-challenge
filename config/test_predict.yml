@@ -1,7 +1,7 @@
 data:
-  data_dir: ../Autopet/
-  data_dir_preprocessed: ../preprocessed_15_samples/preprocessed/
-  splits_file: ../Autopet/splits_final.json
+  data_dir: D:\testing_AI_environment\Autopet
+  data_dir_preprocessed: D:\testing_AI_environment\preprocessed_15_random_sample\train
+  splits_file: D:\testing_AI_environment\Autopet\splits_final.json
   fold: 0
   target_shape: [ 128, 160, 112 ]
   batch_size: 2
@@ -16,7 +16,7 @@ logger:
 model:
   pretrained: true
   resume: false
-  ckpt_path: test/epoch=581_fold0.ckpt
+  ckpt_path: G:\My Drive\AutoPET-III\test_for_the_codes\epoch=581_fold0.ckpt
   lr: 0.001
   sw_batch_size: 4
   seed: 42

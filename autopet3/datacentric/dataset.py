@@ -54,15 +54,12 @@ class RandomPatientDataset(Dataset):
 
 
 if __name__ == "__main__":
-    data_dir = "../../test/preprocessed/train"
-    splits_file = "../../test/data/splits_final.json"
+    data_dir = r"D:\testing_AI_environment\preprocessed_15_random_sample\train"
+    splits_file = r"D:\testing_AI_environment\Autopet\splits_final.json"
     split = read_split(splits_file, 0)["train"]
     transform = None
 
     dataset = RandomPatientDataset(data_dir, split, transform=transform)
-    # Accessing a sample
-    for i in tqdm(range(2)):
-        # Get the first sample
-        sample = dataset[i]
-        image, label = sample
+    for i in tqdm(range(len(dataset))):
+        image, label = dataset[i]
         plot_ct_pet_label(ct=image[0], pet=image[1].numpy(), label=label[0])

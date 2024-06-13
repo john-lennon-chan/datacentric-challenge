@@ -153,15 +153,20 @@ class AutoPETMetricAggregator:
 
 
 if __name__ == "__main__":
-    aggregator = AutoPETMetricAggregator()
-    gt_array = np.zeros((1, 1, 10, 10, 10))
-    pred_array = np.zeros((1, 1, 10, 10, 10))
+    import nibabel as nib
+    prediction_path = r"D:\testing_AI_environment\results\val\predicted_images\psma_ffcaa75377465b37_2018-03-04_0000_pred.nii.gz"
+    ground_truth_path = r"D:\testing_AI_environment\Autopet\labelsTr\psma_ffcaa75377465b37_2018-03-04.nii.gz"
 
-    gt_array[0, 0, 1:5, 1:5, 1:5] = 1
-    gt_array[0, 0, 6:10, 6:10, 6:10] = 1
+
+    aggregator = AutoPETMetricAggregator()
+    gt_array = nib.load(ground_truth_path).get_fdata() #np.zeros((1, 1, 10, 10, 10))
+    pred_array = nib.load(prediction_path).get_fdata() #np.zeros((1, 1, 10, 10, 10))
+
+    #gt_array[0, 0, 1:5, 1:5, 1:5] = 1
+    #gt_array[0, 0, 6:10, 6:10, 6:10] = 1
 
     # Create a cube in the prediction overlapping with one of the cubes in the ground truth
-    pred_array[0, 0, 0:4, 0:4, 0:4] = 1
+    #pred_array[0, 0, 0:4, 0:4, 0:4] = 1
 
     aggregator.update(pred_array, gt_array)
     results = aggregator.compute()
