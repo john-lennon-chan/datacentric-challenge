@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
 
-class ResampleDataset(Dataset):
+class ReaampleDataset(Dataset):
     def __init__(
         self,
         data_dir: str,
@@ -53,7 +53,7 @@ class ResampleDataset(Dataset):
             print(f"valid files length is {len(valid_files)}")
             print(f"train_val_data length after is {len(train_val_data)}")
 
-        self.files = get_file_dict_nn(data_dir, train_val_data, suffix=".nii.gz")
+        self.files = files #get_file_dict_nn(data_dir, train_val_data, suffix=".nii.gz")
         print(f"self.files length after is {len(self.files)}")
         self.lock = Lock()
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     seed = 42
 
     transform = get_transforms("train", target_shape=(128, 160, 112), resample=True)
-    ds = ResampleDataset(root, dest, transform, samples_per_file=samples_per_file, seed=seed, resume=True)
+    ds = AugmentedDataset(root, dest, transform, samples_per_file=samples_per_file, seed=seed, resume=True)
 
     dataloader = DataLoader(ds, batch_size=1, shuffle=False, num_workers=worker)
     for _ in tqdm(dataloader, total=len(dataloader)):

@@ -1,5 +1,4 @@
 LICENSE
-README.md
 pyproject.toml
 requirements.txt
 autopet3/__init__.py
