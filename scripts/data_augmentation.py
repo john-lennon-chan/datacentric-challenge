@@ -8,10 +8,11 @@ import monai
 import monai.transforms as mt
 import numpy as np
 import torch
+import random
 #from autopet3.datacentric.transforms import get_transforms
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
-from DiffTumor.STEP3_SegmentationModel.main import _get_synthesize_transform
+from DiffTumor.STEP3_SegmentationModel.main import _get_synthesize_transform, _get_post_synthesize_transform
 from DiffTumor.STEP3_SegmentationModel.TumorGeneration.utils_AutoPET import synthesize_early_tumor, synthesize_medium_tumor, synthesize_large_tumor, synt_model_prepare
 
 
@@ -23,6 +24,7 @@ class AugmentedDataset(Dataset):
         files,
         #transform: mt.Compose,
         synthesize_transform: mt.Compose = None,
+        post_synthesize_transfomr: mt.Compose = None,
         samples_per_file: int = 15,
         seed: int = 42,
         resume: bool = False,
@@ -47,6 +49,7 @@ class AugmentedDataset(Dataset):
         self.files = files
         #self.transform = transform
         self.synthesize_transform = synthesize_transform
+        self.post_synthesize_transform = post_synthesize_transform
         self.destination = save_path
         self.root = data_dir
         self.samples_per_file = samples_per_file
@@ -69,23 +72,56 @@ class AugmentedDataset(Dataset):
     def __len__(self):
         return len(self.files)
 
-    def synthesize_tumour_preparation(args):
-        """This function is mostly copied from what is inside train_epoch of monai_trainer.py in the DiffTumor folder."""
+    @staticmethod
+    def sliding_window(synthesize_stage_tumour):
+        def sliding_window_version(healthy_data, healthy_target, *args, **kwargs):
+            def new_synthesize_stage_tumour(concatenated_image, *args, **kwargs):
+                synt_data, synt_target = synthesize_stage_tumour(concatenated_image[:, 0:2, :, :, :], concatenated_image[:, 2:3, :, :, :], *args, **kwargs)
+                return torch.cat((synt_data, synt_target), 1)
+            inputs=torch.cat((healthy_data, healthy_target), 1)
+            inferer = monai.inferers.SlidingWindowInferer((96, )*3, 10, 0.5)
+            synt_concatenated = inferer(inputs, new_synthesize_stage_tumour,*args, **kwargs)
+            return synt_concatenated[:, 0:2, :, :, :], synt_concatenated[:, 2:3, :, :, :]
+        return sliding_window_version
 
-        if args.organ_type == 'liver':
-            sample_thresh = 0.5
-        elif args.organ_type == 'pancreas':
-            sample_thresh = 0.5
-        elif args.organ_type == 'kidney':
-            sample_thresh = 0.5
+
+    def synthesize_tumour_preparation(self, args):
+        """This function is mostly copied from what is inside train_epoch of monai_trainer.py in the DiffTumor folder."""
         # model prepare
         vqgan, early_sampler, noearly_sampler = synt_model_prepare(device=torch.device("cuda", args.rank),
-                                                                   fold=args.fold, organ=args.organ_model)
+                                                                   vqgan_ckpt = args.vqgan_ckpt,
+                                                                   diffusion_ckpt = args.diffusion_ckpt,
+                                                                   fold=args.fold, organ=args.organ_model, args=args)
 
-        return vqgan, early_sampler, noearly_sampler, sample_thresh
+        return vqgan, early_sampler, noearly_sampler
 
-    def synthesize_tumour(batch_data):
+    def synthesize_tumour(self, batch_data, j, vqgan, early_sampler, noearly_sampler, args):
+        data, target, data_names = batch_data['image'], batch_data['label'], batch_data['name']
         data, target = data.cuda(args.rank), target.cuda(args.rank)
+
+        # synthesize tumour
+        healthy_data = data[None,...]
+        healthy_target = target[None,...]
+        tumor_types = ['early', 'medium', 'large']
+        tumor_probs = np.array([1, 0, 0]) #np.array([0.8, 0.1, 0.1])
+        synthetic_tumor_type = np.random.choice(tumor_types, p=tumor_probs.ravel())
+        if synthetic_tumor_type == 'early':
+            synt_data, synt_target = self.sliding_window(synthesize_early_tumor)(healthy_data, healthy_target, args.organ_type, vqgan,
+                                                            early_sampler, args)
+        elif synthetic_tumor_type == 'medium':
+            synt_data, synt_target = synthesize_medium_tumor(healthy_data, healthy_target, args.organ_type, vqgan,
+                                                             noearly_sampler, ddim_ts=args.ddim_ts)
+        elif synthetic_tumor_type == 'large':
+            synt_data, synt_target = synthesize_large_tumor(healthy_data, healthy_target, args.organ_type, vqgan,
+                                                            noearly_sampler, ddim_ts=args.ddim_ts)
+
+        data = synt_data[0]
+        target = synt_target[0]
+        return data, target
+
+    def synthesize_tumour_transform(self, data, i, *args, **kwargs):
+        data["image"], data["label"] = self.synthesize_tumour(data, i, *args, **kwargs)
+        return data
 
 
     def __getitem__(self, idx):
@@ -95,16 +131,34 @@ class AugmentedDataset(Dataset):
         # the dictionary of the paths of the data
 
         transformed_data = self.synthesize_transform(file_dict)
+        #input("after data transform")
 
-        vqgan, early_sampler, noearly_sampler, sample_thresh = self.synthesize_tumour_preparation(args)
+        vqgan, early_sampler, noearly_sampler = self.synthesize_tumour_preparation(args)
         for i in range(self.samples_per_file):
+
+            #print("checkpoint 1")
+            #image, label = self.synthesize_tumour(transformed_data, i, vqgan, early_sampler, noearly_sampler, args)
+            data = self.synthesize_tumour_transform(transformed_data[i], i, vqgan, early_sampler, noearly_sampler, args)
+            #print("checkpoint 2")
+            transformed_synthesized_data = self.post_synthesize_transform(data)
+            #assert(1==0)
+            return transformed_synthesized_data
+            #except Exception as e:
+            #    print(f"error is {e}")
+            #    print(f"Error occurred in {file_dict['name']}")
+            #    continue
+            #output_path = os.path.join(self.destination, f"{label_name}_{i:03d}.npz")
+            #os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            #with self.lock:
+            #    np.savez_compressed(output_path, input=image.numpy(), label=label.numpy())
+
             #image, label = self.transform(file_path)
             #label_name = str(file_path["label"]).replace(".nii.gz", "").split("\\")[-1] # / vs \ makes the whole difference
-            output_path = os.path.join(self.destination, f"{label_name}_{i:03d}.npz")
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            with self.lock:
-                np.savez_compressed(output_path, input=image.numpy(), label=label.numpy())
-        return image, label
+            #output_path = os.path.join(self.destination, f"{label_name}_{i:03d}.npz")
+            #os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            #with self.lock:
+            #    np.savez_compressed(output_path, input=image.numpy(), label=label.numpy())
+
 
     def resume_preprocessing(self):
         unique_files, counts = np.unique(
@@ -158,20 +212,21 @@ def creating_data_dicts(data_root, txt):
 
 if __name__ == "__main__":
     root = "DiffTumor_data/Autopet/"
-    dest = "DiffTumor_data/imagesTr_Step_3_preprocessed/"
-    worker = 20
-    samples_per_file = 15
+    dest = "DiffTumor_data/Autopet/imagesTr_Step_3_synthesized/"
+    worker = 0
+
     seed = 42
 
     # this is for the arguments of the procedure of transforms
     class Args:
         def __init__(self):
-            self.organ_type = "liver"
-            self.organ_number = 1
+            self.organ_type = "pancreas"
+            self.organ_number = 7
             self.rank = 0
             self.fold = 0
             self.organ_model = "liver"
-            self.fg_thresh = 0.5
+            self.fg_thresh = 10
+            self.spatial_size = (96, ) * 3
 
             self.ct_a_min = -832.062744140625 # -175
             self.ct_a_max = 1127.758544921875 # 250
@@ -179,7 +234,17 @@ if __name__ == "__main__":
             self.pet_a_max = 51.211158752441406
             self.b_min = -1.0
             self.b_max = 1.0
+            self.samples_per_file = 1
 
+            self.vqgan_ckpt = "DiffTumor/STEP1_AutoencoderModel/checkpoints/vq_gan/synt/AutoPET_with_val/lightning_logs/version_1/checkpoints/latest_checkpoint-v1.ckpt"
+            self.diffusion_ckpt = "DiffTumor/STEP3_SegmentationModel/TumorGeneration/model_weight/"
+
+            self.ddim_ts=50
+            self.output_dir = "DiffTumor_data/Autopet/imagesTr_Step_3_synthesized/"
+
+            self.diffusion_img_size=(24, ) * 3
+            self.sw_batch_size=1
+            self.devices=[0, 1, 2, 3]
 
 
 
@@ -187,13 +252,10 @@ if __name__ == "__main__":
 
     files = creating_data_dicts(root, "DiffTumor_data/Autopet/Step_3_synthesize_datalist.txt")
     #transform = get_transforms("train", target_shape=(128, 160, 112), resample=True)
-    organ_type_dicts = {5: "liver",
-                        2: "kidney",
-                        3: "kidney",
-                        1: "spleen"}
 
-    _, synthesize_transform = _get_synthesize_transform(args)
-    ds = AugmentedDataset(root, dest, files, synthesize_transform=synthesize_transform, samples_per_file=samples_per_file, seed=seed, resume=True, args=args)
+    synthesize_transform, _ = _get_synthesize_transform(args)
+    post_synthesize_transform, _ = _get_post_synthesize_transform(args)
+    ds = AugmentedDataset(root, dest, files, synthesize_transform=synthesize_transform, post_synthesize_transfomr=post_synthesize_transform, samples_per_file=args.samples_per_file, seed=seed, resume=True, args=args)
 
     dataloader = DataLoader(ds, batch_size=1, shuffle=False, num_workers=worker)
     for _ in tqdm(dataloader, total=len(dataloader)):
