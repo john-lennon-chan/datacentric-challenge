@@ -46,6 +46,27 @@ def get_file_dict_nn(root: str, split: List[str], suffix: str = ".nii.gz") -> Li
     ]
     return data
 
+def get_file_dict_nn_synthesized(root: str, split: List[str], suffix: str = ".nii.gz") -> List[dict]:
+    """Generate a dictionary containing paths to CT, PET, and label files for each element in the split list.
+    Args:
+        root (str): The root directory path.
+        split (List[str]): List of elements to generate paths for.
+        suffix (str): Suffix for the file extensions. Default is ".nii.gz".
+    Returns:
+        List[dict]: A list of dictionaries containing paths to CT, PET, and label files for each element in split.
+
+    """
+    root = Path(root)
+    data = [
+        {
+            "ct": root / "imagesTr_Step_3_synthesized" / f"{element}_0000_synthesized{suffix}",
+            "pet": root / "imagesTr_Step_3_synthesized" / f"{element}_0001_synthesized{suffix}",
+            "label": root / "imagesTr_Step_3_synthesized" / f"{element}_0000_trans_synthesized_0{suffix}",
+            "element": element
+        }
+        for element in split
+    ]
+    return data
 
 def extract_paths_containing_tracer(file_dicts: List[dict], key: str = "label") -> np.ndarray:
     # Small helper to extract the tracer from the file name

@@ -6,12 +6,12 @@ import monai.transforms as mt
 import numpy as np
 import torch
 from autopet3.datacentric.transforms import get_transforms
-from autopet3.datacentric.utils import get_file_dict_nn, read_split
+from autopet3.datacentric.utils import get_file_dict_nn, read_split, get_file_dict_nn_synthesized
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
 
-class ReaampleDataset(Dataset):
+class ResampleDataset(Dataset):
     def __init__(
         self,
         data_dir: str,
@@ -34,10 +34,10 @@ class ReaampleDataset(Dataset):
         monai.utils.set_determinism(seed=seed)
         np.random.seed(seed)
 
-        split_data = read_split(os.path.join(data_dir, "splits_final.json"), 0)
+        split_data = read_split(os.path.join(data_dir, "splits_final_new.json"), 0)
         train_val_data = split_data["train"] + split_data["val"]
 
-        self.files = get_file_dict_nn(data_dir, train_val_data, suffix=".nii.gz")
+        self.files = get_file_dict_nn_synthesized(data_dir, train_val_data, suffix=".nii.gz")
         self.transform = transform
         self.destination = save_path
         self.root = data_dir
@@ -53,7 +53,7 @@ class ReaampleDataset(Dataset):
             print(f"valid files length is {len(valid_files)}")
             print(f"train_val_data length after is {len(train_val_data)}")
 
-        self.files = files #get_file_dict_nn(data_dir, train_val_data, suffix=".nii.gz")
+        self.files = get_file_dict_nn_synthesized(data_dir, train_val_data, suffix=".nii.gz")
         print(f"self.files length after is {len(self.files)}")
         self.lock = Lock()
 
@@ -65,7 +65,7 @@ class ReaampleDataset(Dataset):
         for i in range(self.samples_per_file):
             image, label = self.transform(file_path)
             label_name = str(file_path["label"]).replace(".nii.gz", "").split("\\")[-1] # / vs \ makes the whole difference
-            output_path = os.path.join(self.destination, f"{label_name}_{i:03d}.npz")
+            output_path = os.path.join(self.destination, f"{file_path['element']}_syntheszied_01_{i:03d}.npz")
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with self.lock:
                 np.savez_compressed(output_path, input=image.numpy(), label=label.numpy())
@@ -78,7 +78,7 @@ class ReaampleDataset(Dataset):
         valid_files = list(unique_files[counts == self.samples_per_file])
         #valid_files_to_return = []
         for j, i in tqdm(enumerate(valid_files), desc=f"Resuming preprocessing. Validate {len(valid_files)} files"):
-            test_file = os.path.join(self.destination, f"{i}_{self.samples_per_file - 1:03d}.npz")
+            test_file = os.path.join(self.destination, f"{i}_syntheszied_01_{self.samples_per_file - 1:03d}.npz")
             # Load and process data
             data = np.load(test_file)
             try:
@@ -109,14 +109,14 @@ def test_integrity(dir_path):
 
 
 if __name__ == "__main__":
-    root = "../../Autopet"
-    dest = "../../preprocessed/train"
+    root = "DiffTumor_data/Autopet/"
+    dest = "DiffTumor_data/Autopet/preprocessed_1_random_synthesized_sample_2nd/train"
     worker = 20
-    samples_per_file = 15
+    samples_per_file = 1
     seed = 42
 
     transform = get_transforms("train", target_shape=(128, 160, 112), resample=True)
-    ds = AugmentedDataset(root, dest, transform, samples_per_file=samples_per_file, seed=seed, resume=True)
+    ds = ResampleDataset(root, dest, transform, samples_per_file=samples_per_file, seed=seed, resume=True)
 
     dataloader = DataLoader(ds, batch_size=1, shuffle=False, num_workers=worker)
     for _ in tqdm(dataloader, total=len(dataloader)):

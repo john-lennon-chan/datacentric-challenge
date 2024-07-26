@@ -37,14 +37,17 @@ class RandomPatientDataset(Dataset):
     def __getitem__(self, idx):
         patient_id = self.split[idx]
         random_number = random.randint(0, self.max_number)
-        filename = f"{patient_id}_{random_number:03d}.npz"
+        filename = f"{patient_id}_{random_number:03d}.npz" # the synthesized for synthesized data
         filepath = os.path.join(self.data_dir, filename)
 
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"File '{filename}' does not exist in directory '{self.data_dir}'.")
 
         # Load data
-        data = np.load(filepath)
+        try:
+            data = np.load(filepath)
+        except Exception as e:
+            raise Exception(f"Could not load file '{filename}' due to error: {e}")
         image = torch.from_numpy(data["input"])
         label = torch.from_numpy(data["label"])
 
@@ -54,8 +57,8 @@ class RandomPatientDataset(Dataset):
 
 
 if __name__ == "__main__":
-    data_dir = r"D:\testing_AI_environment\preprocessed_15_random_sample\train"
-    splits_file = r"D:\testing_AI_environment\Autopet\splits_final.json"
+    data_dir = r"../../scripts/DiffTumor_data/Autopet/preprocessed/train" # preprocessed_15_random_sample
+    splits_file = r"../../scripts/DiffTumor_data/Autopet/splits_final_new.json" # splits_final.json
     split = read_split(splits_file, 0)["train"]
     transform = None
 

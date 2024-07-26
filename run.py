@@ -102,4 +102,6 @@ def test(config: str = "config/config.yml"):
 
 
 if __name__ == "__main__":
-    app()
+    #app()
+
+    train(config="config/training_augmented_model_config.yml", debug=True)
