@@ -1,0 +1,32 @@
+data:
+  data_dir: scripts/DiffTumor_data/Autopet
+  splits_file: scripts/DiffTumor_data/Autopet/splits_final_combined_1st.json
+  fold: 0
+  target_shape: [ 128, 160, 112 ]
+  batch_size: 5
+  suffix: .npz
+  num_workers_train: 24
+  num_workers_val: 24
+  data_dir_preprocessed: scripts/DiffTumor_data/Autopet/preprocessed_15_random_synthesized_sample_1st/
+
+logger:
+  experiment: ../lightning_logs
+  name: 15_random_sampled_synthesized_1st
+
+model:
+  pretrained: false
+  resume: true
+  ckpt_path: ../lightning_logs/15_random_sampled_synthesized_1st/version_10/checkpoints/last.ckpt
+  lr: 0.001
+  sw_batch_size: 4
+  seed: 42
+
+trainer:
+  max_steps: 51216
+  check_val_every_n_epoch: 5
+  precision: bf16-mixed #32, 16
+  accelerator: gpu
+  devices: [1, 2, 3, 4]
+  deterministic: true
+  strategy: auto
+  sync_batchnorm: true #false
