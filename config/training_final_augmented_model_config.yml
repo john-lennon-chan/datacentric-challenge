@@ -1,32 +1,33 @@
 data:
   data_dir: scripts/DiffTumor_data/Autopet
-  splits_file: scripts/DiffTumor_data/Autopet/splits_final_all_combined_val.json
+  splits_file: scripts/DiffTumor_data/Autopet/splits_final_correct.json
   fold: 0
   target_shape: [ 128, 160, 112 ]
-  batch_size: 5
+  batch_size: 4
   suffix: .npz
-  num_workers_train: 5 #24
-  num_workers_val: 5 #24
+  num_workers_train: 24 #24
+  num_workers_val: 24 #24
   data_dir_preprocessed: scripts/DiffTumor_data/Autopet/preprocessed_all_synthesized_30
 
 logger:
   experiment: ../lightning_logs
-  name: synthesized_all_3_30_stage_2
+  name: final_augmented_model_30_for_the_preliminary
 
 model:
   pretrained: false
   resume: true
-  ckpt_path: ../lightning_logs/synthesized_all_3_30/version_1/checkpoints/epoch=579-step=299280.ckpt
-  lr: 0.001
+  ckpt_path: ../lightning_logs/final_augmented_model_30_for_the_preliminary/version_5/checkpoints/epoch=285-step=230151.ckpt
+  lr: 0.0001
   sw_batch_size: 4
   seed: 42
 
 trainer:
-  max_steps: 598560
-  check_val_every_n_epoch: 5
+  max_steps: 1240000
+  val_check_interval: 1
+  check_val_every_n_epoch: 1
   precision: bf16-mixed #32, 16
   accelerator: gpu
-  devices: [2, 3]
+  devices: [0, 1]
   deterministic: true
   strategy: auto
   sync_batchnorm: true #false

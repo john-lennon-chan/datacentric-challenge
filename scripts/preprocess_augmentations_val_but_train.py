@@ -6,20 +6,21 @@ import monai.transforms as mt
 import numpy as np
 import torch
 from autopet3.datacentric.transforms import get_transforms
-from autopet3.datacentric.utils import get_file_dict_nn, read_split, get_file_dict_nn_synthesized, get_file_dict_nn_synthesized_all
+from autopet3.datacentric.utils import get_file_dict_nn, read_split, get_file_dict_nn_synthesized, \
+    get_file_dict_nn_synthesized_all
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
 
 class ResampleDataset(Dataset):
     def __init__(
-        self,
-        data_dir: str,
-        save_path: str,
-        transform: mt.Compose,
-        samples_per_file: int = 15,
-        seed: int = 42,
-        resume: bool = False,
+            self,
+            data_dir: str,
+            save_path: str,
+            transform: mt.Compose,
+            samples_per_file: int = 15,
+            seed: int = 42,
+            resume: bool = False,
     ) -> None:
         """Initialize the class with the provided parameters.
         Args:
@@ -35,7 +36,7 @@ class ResampleDataset(Dataset):
         np.random.seed(seed)
 
         split_data = read_split(os.path.join(data_dir, "splits_final_all.json"), 0)
-        train_val_data = split_data["train"]# + split_data["val"]
+        train_val_data = split_data["val"]  # + split_data["val"]
 
         self.files = get_file_dict_nn_synthesized_all(data_dir, train_val_data, suffix=".nii.gz")
         self.transform = transform
@@ -54,20 +55,20 @@ class ResampleDataset(Dataset):
             print(f"train_val_data length after is {len(train_val_data)}")
 
         self.files = get_file_dict_nn_synthesized_all(data_dir, train_val_data, suffix=".nii.gz")
-        #print("self files are")
-        #print(self.files)
+        # print("self files are")
+        # print(self.files)
         print(f"self.files length after is {len(self.files)}")
         self.lock = Lock()
 
     def __len__(self):
         return len(self.files)
 
-
     def __getitem__(self, idx):
         file_path = self.files[idx]
         for i in range(self.samples_per_file):
             image, label = self.transform(file_path)
-            label_name = str(file_path["label"]).replace(".nii.gz", "").split("\\")[-1] # / vs \ makes the whole difference
+            label_name = str(file_path["label"]).replace(".nii.gz", "").split("\\")[
+                -1]  # / vs \ makes the whole difference
             output_path = os.path.join(self.destination, f"{file_path['element']}_synthesized_{i:03d}.npz")
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
             with self.lock:
@@ -80,9 +81,9 @@ class ResampleDataset(Dataset):
         )
         valid_files = list(unique_files[counts == self.samples_per_file])
         invalid_files = list(unique_files[counts != self.samples_per_file])
-        # just for testin        
-        #input()
-        #valid_files_to_return = []
+        # just for testin
+        # input()
+        # valid_files_to_return = []
         for j, i in tqdm(enumerate(valid_files), desc=f"Resuming preprocessing. Validate {len(valid_files)} files"):
 
             try:
@@ -90,17 +91,17 @@ class ResampleDataset(Dataset):
 
                 image = torch.from_numpy(data["input"])
                 label = torch.from_numpy(data["label"])
-                #valid_files_to_return.append(test_file)
+                # valid_files_to_return.append(test_file)
             except Exception:
                 valid_files.pop(j)
 
         print(f"Found {len(valid_files)} valid files!")
         valid_files = ['_'.join(valid_file.split('_')[:-1]) for valid_file in valid_files]
-        #print(valid_files)
+        # print(valid_files)
         invalid_files = ['_'.join(invalid_file.split('_')[:-1]) for invalid_file in invalid_files]
         valid_files = [valid_file for valid_file in valid_files if valid_file not in invalid_files]
-        #valid_files.remove("fdg_d40a16781a_09-13-2003-NA-PET-CT Ganzkoerper  primaer mit KM-42002")
-        #valid_files.remove("fdg_5060603ba4_09-19-2003-NA-PET-CT Ganzkoerper nativ-36416")
+        # valid_files.remove("fdg_d40a16781a_09-13-2003-NA-PET-CT Ganzkoerper  primaer mit KM-42002")
+        # valid_files.remove("fdg_5060603ba4_09-19-2003-NA-PET-CT Ganzkoerper nativ-36416")
         return valid_files
 
 
@@ -113,7 +114,7 @@ def test_integrity(dir_path):
         # Loa
         try:
             data = np.load(file_path)
-    
+
             image = torch.from_numpy(data["input"])
             label = torch.from_numpy(data["label"])
         except Exception as e:
@@ -123,8 +124,8 @@ def test_integrity(dir_path):
 
 if __name__ == "__main__":
     root = "DiffTumor_data/Autopet/"
-    dest = "DiffTumor_data/Autopet/preprocessed_all_synthesized_30/train"
-    worker = 2
+    dest = "DiffTumor_data/Autopet/preprocessed_all_synthesized_30/val_but_train"
+    worker = 24
     samples_per_file = 30
     seed = 42
 
