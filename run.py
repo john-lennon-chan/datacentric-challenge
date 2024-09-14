@@ -42,7 +42,7 @@ def train(config: str = "config/config.yml", debug: bool = False):
     lr_monitor = LearningRateMonitor(logging_interval="step", log_momentum=True, log_weight_decay=True)
     config_callback = SaveFileToLoggerDirCallback(config_file)
     #checkpoint_callback = ModelCheckpoint(filename="{epoch}-{step}", monitor="val/loss", mode="min", save_last=True)
-    checkpoint_callback = ModelCheckpoint(filename="{epoch}-{step}", monitor="val/dice", mode="max", save_top_k=8, save_last=True)
+    checkpoint_callback = ModelCheckpoint(filename="{epoch}-{step}", monitor="val/dice", mode="max", save_top_k=-1, save_last=True)
     trainer = Trainer(callbacks=[lr_monitor, config_callback, checkpoint_callback], logger=logger, **config.trainer)
 
     if hasattr(config.model, "resume"):
