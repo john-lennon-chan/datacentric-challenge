@@ -34,7 +34,7 @@ class ResampleDataset(Dataset):
         monai.utils.set_determinism(seed=seed)
         np.random.seed(seed)
 
-        split_data = read_split(os.path.join(data_dir, "splits_final_all.json"), 0)
+        split_data = read_split(os.path.join(data_dir, "splits_final_correct.json"), 0)
         train_val_data = split_data["train"]# + split_data["val"]
 
         self.files = get_file_dict_nn_synthesized_all(data_dir, train_val_data, suffix=".nii.gz")
@@ -122,10 +122,10 @@ def test_integrity(dir_path):
 
 
 if __name__ == "__main__":
-    root = "DiffTumor_data/Autopet/"
-    dest = "DiffTumor_data/Autopet/preprocessed_all_synthesized_30/train"
-    worker = 2
-    samples_per_file = 30
+    root = "D:/testing_AI_environment/Autopet/"
+    dest = "D:/testing_AI_environment/Autopet/preprocessed_1_transform/train"
+    worker = 8
+    samples_per_file = 1
     seed = 42
 
     transform = get_transforms("train", target_shape=(128, 160, 112), resample=True)
