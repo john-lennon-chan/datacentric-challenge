@@ -1,22 +1,21 @@
 # Introduction
 
-Welcome to the Data-Centric Baseline Model repository for the autoPET III Challenge 2024! This repository provides all the necessary resources for participating in Award Category 2, which emphasizes leveraging data handling to enhance model performance. 
-
-Data-Centric Artificial Intelligence (DCAI) is an emerging field which finds its roots in the observation that messy real world data often limits the performance of modern models. In these cases, data cleaning, outlier removal, and judicious augmentation strategies can yield much higher performance boosts than optimizing model configurations. For those interested in learning more about DCAI, we recommend exploring the [MIT lecture Introduction to Data-Centric AI](https://dcai.csail.mit.edu/). It's important to acknowledge that the autoPET dataset isn't flawless; its complexities and reliance on medical expert labeling introduce ambiguity. Thus, the challenge lies in identifying data-related issues and address them to develop better pipelines. 
-
-Running a data-centric challenge is difficult since it is easy to cheat and difficult to provide reference code which will work across various infrastructures. Therefore, we place great emphasis on participants' honesty and commitment to prioritizing data related methods rather than modeling advancements. If you encounter any code errors or have trouble running the code, please raise an issue to this repository rather than attempting to fix it yourself. We'll promptly address the problem and communicate updates to all participants. Thank you for your participation, and best of luck in the challenge!
-
-![data-centric](assets/datac.png)
+This the code for training of the tumour segmentation model for PET-CT imaging. The work is based on the software provided by Clinical Data Science, Department of Radiology, LMU University Hospital, LMU Munich, is licensed under the Apache License, Version 2.0 (see http://www.apache.org/licenses/LICENSE-2.0)."
 
 ## Quick setup
 
-- Make sure you have a valid >=python3.8 installation.
+- Make sure you have a valid >=python3.8 installation, preferably python3.10
 - Download the repository i.e. `git clone`.
-- Create a virtualenv via venv or virtualenv e.g.`virtualenv venv`.
-- Activate the venv via `source venv/bin/activate`
+- Create a conda virtual environment via `conda create -n autopet python=3.10`
 - Install the package via `pip install -e .`
 - Download the [dataset](https://it-portal.med.uni-muenchen.de/autopet/Autopet_v1.1.tgz) and unzip it to a location of your choice
-- To validate the setup, please download the test folder via `git lfs pull` (if git lfs does not work, use `bash download_test_data.sh`) and then run `python run.py train --config=config/test_config.yml` (perhaps you need to modify the devices in the config)
+- Create a new folder in the dataset to store preprocessed data `mkdir /path/to/dataset/preprocessed`
+- create a train and test folder in it `mkdir /path/to/dataset/preprocessed/train` and `mkdir /path/to/dataset/preprocessed/test`
+- go to the training preprocessing script, change the root path to the dataset and the output path to the preprocessed train folder
+- change the samples_per_file to the number of augmentations you desire
+- go to the testing preprocessing script, change the root path to the dataset and the output path to the preprocessed test folder
+- Run the preprocessing script via `python scripts/preprocess_augmentations.py`
+- Run the training script via `python train.py --config config/training_config.yml`
 
 ## How it works
 
@@ -131,6 +130,11 @@ A preprocessing script can be used to clean the dataset, remove outlier or gener
 
 The predict function [predict.py](predict.py) integrates a postprocessing function. Test-time augmentation (TTA) was used to improve model performance. In addition, fewer random rotations were used to obtain a faster prediction time. We allow for ensembling even it's not strictly datacentric, but it can be considered best practice in a challenge setup. 
 There are a lot of post calibration techniques, etc, which we did not explicitly forbid. If any of these methods contribute more to the performance than your data methods please be fair and submit your method to award category 1 only.
+
+Reference
+
+Clinical Data Science, Department of Radiology, LMU University Hospital, LMU Munich. Datacentric-Challenge Code. 2024. Licensed under the Apache License, Version 2.0. Available at: http://www.apache.org/licenses/LICENSE-2.0
+
 
 
 
