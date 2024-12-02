@@ -2,20 +2,25 @@
 
 This the code for training of the tumour segmentation model for PET-CT imaging. The work is based on the software provided by Clinical Data Science, Department of Radiology, LMU University Hospital, LMU Munich, is licensed under the Apache License, Version 2.0 (see http://www.apache.org/licenses/LICENSE-2.0)."
 
-## Quick setup
+## Setup
 
+- Make sure you have a GPU with VRAM of at least 8.0GB
 - Make sure you have a valid >=python3.8 installation, preferably python3.10
-- Download the repository i.e. `git clone`.
+- Download the repository i.e. `git clone`
 - Create a conda virtual environment via `conda create -n autopet python=3.10`
 - Install the package via `pip install -e .`
 - Download the [dataset](https://it-portal.med.uni-muenchen.de/autopet/Autopet_v1.1.tgz) and unzip it to a location of your choice
+
 - Create a new folder in the dataset to store preprocessed data `mkdir /path/to/dataset/preprocessed`
-- create a train and test folder in it `mkdir /path/to/dataset/preprocessed/train` and `mkdir /path/to/dataset/preprocessed/test`
-- go to the training preprocessing script, change the root path to the dataset and the output path to the preprocessed train folder
+- create a train and validation folder in it `mkdir /path/to/dataset/preprocessed/train` and `mkdir /path/to/dataset/preprocessed/val`
+- go to the script/preprocess_augmentations_training.py, change the root path to the dataset and the output path to the preprocessed train folder
 - change the samples_per_file to the number of augmentations you desire
-- go to the testing preprocessing script, change the root path to the dataset and the output path to the preprocessed test folder
-- Run the preprocessing script via `python scripts/preprocess_augmentations.py`
-- Run the training script via `python train.py --config config/training_config.yml`
+- go to the script/preprocess_augmentations_validation.py, change the root path to the dataset and the output path to the preprocessed validation folder 
+- Run the training preprocessing script via `python scripts/preprocess_augmentations_training.py`
+- Run the testing preprocessing script via `python scripts/preprocess_augmentations_validation.py`
+
+- Change config/training_config.yml to point to the correct data directory, split files, and preprocessed directory
+- Run the training script via `python run.py train --config config/training_config.yml`
 
 ## How it works
 

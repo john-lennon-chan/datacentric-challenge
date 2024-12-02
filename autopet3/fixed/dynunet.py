@@ -51,7 +51,7 @@ class NNUnet(pl.LightningModule):
         # formulated as DiceBCE and batch is True according to 3d_fullres plans
         self.loss_fn = DiceCELoss(sigmoid=True, batch=True, include_background=True)
         self.dice_metric = DiceMetric(include_background=False, reduction="mean", get_not_nans=False, ignore_empty=True)
-        self.confusion = ConfusionMatrixMetric(reduction="mean", metric_name="f1 score")
+        self.confusion = ConfusionMatrixMetric(reduction="mean", metric_name=["f1 score", "sensitivity", "miss rate", "fall out", "specificity"])
         self.test_aggregator = AutoPETMetricAggregator()
 
         self.train_loss = []
@@ -128,6 +128,10 @@ class NNUnet(pl.LightningModule):
             sync_dist=True,
         )
         mean_fp = self.confusion.aggregate()[0].item()
+        mean_TPR = self.confusion.aggregate()[1].item()
+        mean_FNR = self.confusion.aggregate()[2].item()
+        mean_FPR = self.confusion.aggregate()[3].item()
+        mean_TNR = self.confusion.aggregate()[4].item()
         self.confusion.reset()
         self.log(
             "val/f1",
@@ -136,7 +140,36 @@ class NNUnet(pl.LightningModule):
             prog_bar=True,
             sync_dist=True,
         )
-        return {"val/dice": mean_val_dice, "val/f1": mean_fp}
+        self.log(
+            "val/True positive rate",
+            mean_TPR,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
+        self.log(
+            "val/False negative rate",
+            mean_FNR,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
+        self.log(
+            "val/False positive rate",
+            mean_FPR,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
+        self.log(
+            "val/True negative rate",
+            mean_TNR,
+            on_epoch=True,
+            prog_bar=True,
+            sync_dist=True,
+        )
+        return {"val/dice": mean_val_dice, "val/f1": mean_fp, "val/True positive rate": mean_TPR, "val/False negative rate": mean_FNR, "val/False positive rate": mean_FPR, "val/True negative rate": mean_TNR}
+
 
     def test_step(self, batch, batch_idx):
         volume, label = batch
