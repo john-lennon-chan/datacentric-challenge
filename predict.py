@@ -282,11 +282,11 @@ def evaluate(
     predict = PredictModel(model_paths, sw_batch_size=sw_batch_size, tta=tta, random_flips=random_flips)
     #parser = SimpleParser(os.path.join(result_path, "results_tta.json"))
     split = read_split(config.data.splits_file, config.data.fold)
-    files = get_file_dict_nn(config.data.data_dir, [path for path in split["train"] if path not in processed_files], suffix=".nii.gz")
-    for file, path in zip(tqdm(files, desc="Predicting"), [path for path in split["train"] if path not in processed_files]):
+    files = get_file_dict_nn(config.data.data_dir, [path for path in split["val"] if path not in processed_files], suffix=".nii.gz")
+    for file, path in zip(tqdm(files, desc="Predicting"), [path for path in split["val"] if path not in processed_files]):
         result = predict.run(str(file["ct"]), str(file["pet"]), save_path=result_path, verbose=False)
         processed_files.append(path)
-        json.dump(processed_files, open(r"D:\testing_AI_environment\results\train\predicted_filenames.json", "w"))
+        json.dump(processed_files, open(r"../results/predicted_filenames.json", "w"))
         #result = predict.run(str(file["ct"]), str(file["pet"]), label=str(file["label"]), verbose=False)
         #parser.write(file, result)
         # Delete the variable
@@ -306,10 +306,10 @@ if __name__ == "__main__":
 
 
     from tqdm import tqdm
-    predict_model = PredictModel([r"D:\testing_AI_environment\test\epoch=581_fold0.ckpt"])
-    split_file = read_split(r"D:\testing_AI_environment\Autopet\splits_final.json", 0)
+    predict_model = PredictModel([r"../lightning_logs/synthesized_all_3_15/version_7/checkpoints/epoch=449-step=232200.ckpt"])
+    split_file = read_split(r"scripts/DiffTumor_data/Autopet/splits_final.json", 0)
     train_val = ["train", "val"]
-    predicted_filenames = json.load(open(r"D:\testing_AI_environment\results\train\predicted_filenames.json"))
+    predicted_filenames = []#json.load(open(r"../results/predicted_filenames.json"))
     """
     
     # running from inference with transform
@@ -327,7 +327,7 @@ if __name__ == "__main__":
             )
     """
 
-    evaluate(result_path=r"D:\testing_AI_environment\results\predicted_images", processed_files=predicted_filenames)
+    evaluate(result_path=r"../results/predicted_images", processed_files=predicted_filenames)
 
 
     #app()

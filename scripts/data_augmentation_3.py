@@ -19,7 +19,8 @@ from DiffTumor.STEP3_SegmentationModel.TumorGeneration.utils_AutoPET import synt
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
 
-
+import threading
+import time
 
 class AugmentedDataset(Dataset):
     def __init__(
@@ -331,12 +332,57 @@ if __name__ == "__main__":
     ds = AugmentedDataset(root, dest, files, synthesize_transform=synthesize_transform, post_synthesize_transform=post_synthesize_transform, samples_per_file=args.samples_per_file, seed=seed, resume=True, args=args)
 
     dataloader = DataLoader(ds, batch_size=1, shuffle=False, num_workers=worker)
+
+
+    # Function to monitor the loop
+    def monitor_loop(iterator, threshold):
+        def watchdog():
+            nonlocal stuck
+            while not stop_event.is_set():
+                time.sleep(threshold)
+                if not stop_event.is_set():
+                    stuck = True
+                    print("Loop is stuck, restarting...")
+                    break
+
+        stop_event = threading.Event()
+        stuck = False
+
+        while True:
+            for item in tqdm(iterator):
+                stuck = False
+                watchdog_thread = threading.Thread(target=watchdog)
+                watchdog_thread.start()
+
+                stop_event.set()
+                watchdog_thread.join()
+
+                if stuck:
+                    break
+            if not stuck:
+                break
+
+
+    iterator = dataloader
+    monitor_loop(iterator, threshold=600)
+
+    # Example usage
+    iterator = dataloader # range(10)
+    #while True:
+    #    try:
+    #        monitor_loop(iterator, threshold=600)
+    #    except (ValueError, MemoryError, SystemExit):
+    #        continue
+
+
+
+
     while True:
         try:
             for _ in tqdm(dataloader, total=len(dataloader)):
                 pass
             break
-        except SystemExit:
+        except (MemoryError, SystemExit):
             continue
 
     test_integrity(dest)

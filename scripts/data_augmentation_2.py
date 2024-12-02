@@ -8,6 +8,7 @@ import monai
 from monai import transforms
 import monai.transforms as mt
 import numpy as np
+import nibabel as nib
 import torch
 import random
 #from autopet3.datacentric.transforms import get_transforms
@@ -318,6 +319,14 @@ if __name__ == "__main__":
         if file_entry["ct"].split('/')[-1].split(".nii")[0] + f"_{args.samples_per_file-1:02}_synthesized.nii.gz" in list(os.listdir(dest)):
             files.remove(file_entry)
 
+    files = files[1:]
+
+    for dic in files:
+        fn = dic['label']
+        image = nib.load(fn).get_fdata()
+        print(f"file {fn.split('/')[-1]} is {np.unique(image)}")
+
+
 
 
     #transform = get_transforms("train", target_shape=(128, 160, 112), resample=True)
@@ -330,12 +339,22 @@ if __name__ == "__main__":
     ds = AugmentedDataset(root, dest, files, synthesize_transform=synthesize_transform, post_synthesize_transform=post_synthesize_transform, samples_per_file=args.samples_per_file, seed=seed, resume=True, args=args)
 
     dataloader = DataLoader(ds, batch_size=1, shuffle=False, num_workers=worker)
+
+
+    #for i in range(11):
+    #    try:
+    #        _ = next(iter(dataloader))
+    #    except Exception as e:
+    #        print(e)
+    #        continue
+
     while True:
         try:
             for _ in tqdm(dataloader, total=len(dataloader)):
                 pass
             break
-        except (MemoryError, SystemExit, SystemError):
+        except (ValueError, RuntimeError, MemoryError, SystemExit, SystemError) as e:
+            print(e)
             continue
 
     test_integrity(dest)

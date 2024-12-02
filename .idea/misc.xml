@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="datacentric-challenge" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="difftumor" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="datacentric-challenge" project-jdk-type="Python SDK" />
 </project>

@@ -1,7 +1,7 @@
 data:
-  data_dir: D:\testing_AI_environment\Autopet
-  data_dir_preprocessed: D:\testing_AI_environment\preprocessed_15_random_sample\train
-  splits_file: D:\testing_AI_environment\Autopet\splits_final.json
+  data_dir: scripts/DiffTumor_data/Autopet
+  data_dir_preprocessed: scripts/DiffTumor_data/Autopet/preprocessed_all_synthesized_15
+  splits_file: scripts/DiffTumor_data/Autopet/splits_final.json
   fold: 0
   target_shape: [ 128, 160, 112 ]
   batch_size: 2
@@ -16,7 +16,7 @@ logger:
 model:
   pretrained: true
   resume: false
-  ckpt_path: G:\My Drive\AutoPET-III\test_for_the_codes\epoch=581_fold0.ckpt
+  ckpt_path: ../lightning_logs/synthesized_all_3_15/version_7/checkpoints/epoch=449-step=232200.ckpt
   lr: 0.001
   sw_batch_size: 4
   seed: 42

@@ -41,6 +41,7 @@ def get_file_dict_nn(root: str, split: List[str], suffix: str = ".nii.gz") -> Li
             "ct": root / "imagesTr" / f"{element}_0000{suffix}",
             "pet": root / "imagesTr" / f"{element}_0001{suffix}",
             "label": root / "labelsTr" / f"{element}{suffix}",
+            "element": element
         }
         for element in split
     ]
@@ -65,6 +66,28 @@ def get_file_dict_nn_synthesized(root: str, split: List[str], suffix: str = ".ni
             "element": element
         }
         for element in split
+    ]
+    return data
+
+def get_file_dict_nn_synthesized_all(root: str, split: List[str], suffix: str = ".nii.gz") -> List[dict]:
+    """Generate a dictionary containing paths to CT, PET, and label files for each element in the split list.
+    Args:
+        root (str): The root directory path.
+        split (List[str]): List of elements to generate paths for.
+        suffix (str): Suffix for the file extensions. Default is ".nii.gz".
+    Returns:
+        List[dict]: A list of dictionaries containing paths to CT, PET, and label files for each element in split.
+
+    """
+    root = Path(root)
+    data = [
+        {
+            "ct": root / "imagesTr_Step_3_synthesized" / f"{element}_0000_{number:02}_synthesized{suffix}",
+            "pet": root / "imagesTr_Step_3_synthesized" / f"{element}_0001_{number:02}_synthesized{suffix}",
+            "label": root / "imagesTr_Step_3_synthesized" / f"{element}_0000_trans_{number:02}_synthesized_{number}{suffix}",
+            "element": f"{element}_{number:02}"
+        }
+        for element in split for number in range(3)
     ]
     return data
 
